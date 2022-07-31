@@ -46,10 +46,6 @@ def main() :
   ##
   dfn.to_parquet(outpn , index = False)
 
-  ##
-  oldpn.unlink()
-  newpn.unlink()
-
 ##
 
 
