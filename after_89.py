@@ -19,7 +19,7 @@ from aiohttp import ClientSession
 
 nest_asyncio.apply()  # Run this line in cell mode to code work
 
-outpn = Path('after_89.prq')
+outpn = Path('dta/after_89.prq')
 
 class ReqParams :
   def __init__(self) :
@@ -218,4 +218,3 @@ def main() :
 
 if __name__ == "__main__" :
   main()
-  print(f'{PurePath(__file__).name} Done.')

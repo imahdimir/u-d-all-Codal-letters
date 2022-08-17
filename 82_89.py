@@ -6,16 +6,16 @@ old ones: 1382_1389
 
 ##
 
+import pandas as pd
 from pathlib import Path
 from pathlib import PurePath
-
-import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-outpn = Path('82_89.prq')
+
+outpn = Path('dta/82_89.prq')
 
 chrome_options = Options()
 chrome_options.add_argument("--disable-extensions")
@@ -67,4 +67,3 @@ def main() :
 
 if __name__ == "__main__" :
   main()
-  print(f'{PurePath(__file__).name} Done.')

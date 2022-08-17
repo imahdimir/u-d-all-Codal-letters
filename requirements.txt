@@ -1,5 +1,7 @@
 # python 3.10.4
 # arm64 Apple M1
+# chrome
+# chrome driver
 pip~=22.2.1
 pandas~=1.4.3
 requests~=2.28.1
