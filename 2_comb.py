@@ -70,7 +70,8 @@ def fix_codalticker_col(df):
   msk = df[cn].eq('')
   df.loc[msk, cn] = None
 
-  df[cn] = df[cn].astype(str)
+  msk = df[cn].notna()
+  df.loc[msk , cn] = df[cn].astype(str)
 
   return df
 
