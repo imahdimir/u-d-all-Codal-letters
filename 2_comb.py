@@ -5,7 +5,6 @@ combines old (82-89) data with new(after 89) data
     """
 
 import ast
-from calendar import c
 from pathlib import Path
 
 import pandas as pd
@@ -61,6 +60,20 @@ def rename_cols(df) :
   df = df.rename(columns = cols_map)
 
   return df
+
+def fix_codalticker_col(df):
+  cn = codtic
+
+  df[cn] = df[cn].str.strip()
+  df[cn] = df[cn].str.replace('^-$', '')
+
+  msk = df[cn].eq('')
+  df.loc[msk, cn] = None
+
+  df[cn] = df[cn].astype(str)
+
+  return df
+
 
 def fix_tracing_no_col(df) :
   df[tran] = df[tran].astype('Int64')
@@ -158,6 +171,7 @@ def fix_cols_order(df) :
 
   return df
 
+
 def main() :
   pass
 
@@ -182,7 +196,7 @@ def main() :
   df = rename_cols(df)
 
   ##
-  df[codtic] = df[codtic].str.strip()
+  df = fix_codalticker_col(df)
 
   ##
   df = fix_tracing_no_col(df)
@@ -224,6 +238,6 @@ def main() :
   ##
 
   acod_rp.rmdir()
-  
+
 
 ##

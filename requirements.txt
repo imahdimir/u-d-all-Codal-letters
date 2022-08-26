@@ -15,3 +15,5 @@ selenium~=4.3.0
 lxml~=4.9.1
 mirutil~=2.9
 webdriver_manager~=3.8.3
+githubdata~=2.8
+persiantools~=3.0.1
