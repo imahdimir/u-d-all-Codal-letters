@@ -5,6 +5,7 @@ combines old (82-89) data with new(after 89) data
     """
 
 import ast
+from calendar import c
 from pathlib import Path
 
 import pandas as pd
@@ -181,6 +182,9 @@ def main() :
   df = rename_cols(df)
 
   ##
+  df[codtic] = df[codtic].str.strip()
+
+  ##
   df = fix_tracing_no_col(df)
 
   ##
@@ -220,5 +224,6 @@ def main() :
   ##
 
   acod_rp.rmdir()
+  
 
 ##
