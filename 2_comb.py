@@ -128,7 +128,9 @@ def make_supervision_col_3_distinct_cols(df) :
 
   for col , ky in col_key.items() :
     df.loc[msk , col] = df.loc[msk , cn].apply(lambda x : x[ky[0]])
-    df[col] = df[col].astype(ky[1])
+
+    msk = df[col].notna()
+    df.loc[msk, col] = df.loc[msk, col].astype(ky[1])
 
   df = df.drop(columns = cn)
 
@@ -241,4 +243,5 @@ def main() :
   acod_rp.rmdir()
 
 
+##
 ##
