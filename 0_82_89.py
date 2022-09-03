@@ -23,40 +23,40 @@ driver = webdriver.Chrome(service = Service(ChromeDriverManager().install()) ,
                           options = chrome_options)
 
 def gen_mycodal_link(pgn) :
-  return f'https://my.codal.ir/fa/old-statement/?page={pgn}'
+    return f'https://my.codal.ir/fa/old-statement/?page={pgn}'
 
 def main() :
-  pass
+    pass
 
-  ##
+    ##
 
-  if outfp.exists() :
-    df = pd.read_parquet(outfp)
-    bfpgs = df['pgn'].dropna().astype(int).unique()
-  else :
-    df = pd.DataFrame()
-    bfpgs = []
+    if outfp.exists() :
+        df = pd.read_parquet(outfp)
+        bfpgs = df['pgn'].dropna().astype(int).unique()
+    else :
+        df = pd.DataFrame()
+        bfpgs = []
 
-  ##
-  total_pgs = 3471
+    ##
+    total_pgs = 3471
 
-  pgs_2crawl = set(range(1 , total_pgs + 1)) - set(bfpgs)
+    pgs_2crawl = set(range(1 , total_pgs + 1)) - set(bfpgs)
 
-  ##
-  for pgn in pgs_2crawl :
-    driver.get(gen_mycodal_link(pgn))
-    htmlt = driver.page_source
+    ##
+    for pgn in pgs_2crawl :
+        driver.get(gen_mycodal_link(pgn))
+        htmlt = driver.page_source
 
-    dta = pd.read_html(htmlt)
-    df0 = dta[0]
+        dta = pd.read_html(htmlt)
+        df0 = dta[0]
 
-    df0['pgn'] = pgn
-    print(pgn)
+        df0['pgn'] = pgn
+        print(pgn)
 
-    df = pd.concat([df , df0])
+        df = pd.concat([df , df0])
 
-  ##
-  df = df.drop_duplicates(df.columns.difference(['pgn']))
-  df.to_parquet(outfp , index = False)
+    ##
+    df = df.drop_duplicates(df.columns.difference(['pgn']))
+    df.to_parquet(outfp , index = False)
 
 ##
