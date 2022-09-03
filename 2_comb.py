@@ -6,28 +6,39 @@
 
 
 import ast
-from pathlib import Path
 
 import pandas as pd
 from githubdata import GithubData
+from mirutil import utils as mu
+from mirutil.df_utils import save_as_prq_wo_index as sprq
 from persiantools import digits
 
 
-acod_rp_url = 'https://github.com/imahdimir/d-all-Codal-Letters'
-cur_rp_url = 'https://github.com/imahdimir/get-all-Codal-Letters'
+class RepoUrls :
+    src = 'https://github.com/imahdimir/raw-d-all-Codal-letters'
+    targ = 'https://github.com/imahdimir/d-all-Codal-Letters'
+    cur = 'https://github.com/imahdimir/b-d-all-Codal-letters'
 
-oldfp = Path('dta/82_89.prq')
-newfp = Path('dta/after_89.prq')
+ru = RepoUrls()
 
-tran = 'TracingNo'
-codtic = 'CodalTicker'
-supv = 'SuperVision'
-unds = 'UnderSupervision'
-addinfo = 'AdditionalInfo'
-reasons = 'Reasons'
-supvund = supv + '.' + unds
-supvadd = supv + '.' + addinfo
-supvreas = supv + '.' + reasons
+class RawDataStems :
+    old = '82-89.prq'
+    new = 'after-89.prq'
+
+rd = RawDataStems()
+
+class ColNames :
+    tran = 'TracingNo'
+    ctic = 'CodalTicker'
+    supv = 'SuperVision'
+    unds = 'UnderSupervision'
+    addinfo = 'AdditionalInfo'
+    reasons = 'Reasons'
+    supvund = supv + '.' + unds
+    supvadd = supv + '.' + addinfo
+    supvreas = supv + '.' + reasons
+
+cn = ColNames()
 
 def make_old_columns_compatible_to_new(df) :
     cols_map = {
@@ -51,29 +62,29 @@ def drop_some_cols(df) :
 
 def rename_cols(df) :
     cols_map = {
-            'Symbol' : codtic ,
+            'Symbol' : cn.ctic ,
             }
     df = df.rename(columns = cols_map)
     return df
 
 def fix_codalticker_col(df) :
-    cn = codtic
+    _cn = cn.ctic
 
-    df[cn] = df[cn].str.strip()
-    df[cn] = df[cn].str.replace('^-$' , '')
+    df[_cn] = df[_cn].str.strip()
+    df[_cn] = df[_cn].str.replace('^-$' , '')
 
-    msk = df[cn].eq('')
-    df.loc[msk , cn] = None
+    msk = df[_cn].eq('')
+    df.loc[msk , _cn] = None
 
-    msk = df[cn].notna()
-    df.loc[msk , cn] = df[cn].astype(str)
+    msk = df[_cn].notna()
+    df.loc[msk , _cn] = df[_cn].astype(str)
     return df
 
 def fix_tracing_no_col(df) :
-    df[tran] = df[tran].astype('Int64')
+    df[cn.tran] = df[cn.tran].astype('Int64')
 
-    msk = df[tran].notna()
-    df.loc[msk , tran] = df[tran].astype(str)
+    msk = df[cn.tran].notna()
+    df.loc[msk , cn.tran] = df[cn.tran].astype(str)
     return df
 
 def fix_datetime_cols(df) :
@@ -103,25 +114,25 @@ def fix_undersupervision_col(df) :
     return df
 
 def make_supervision_col_3_distinct_cols(df) :
-    cn = supv
+    _cn = cn.supv
 
-    msk = df[cn].notna()
-    df.loc[msk , cn] = df.loc[msk , cn].apply(ast.literal_eval)
+    msk = df[_cn].notna()
+    df.loc[msk , _cn] = df.loc[msk , _cn].apply(ast.literal_eval)
 
-    assert df.loc[msk , cn].apply(lambda x : len(x.keys()) == 3).all()
+    assert df.loc[msk , _cn].apply(lambda x : len(x.keys()) == 3).all()
 
     col_key = {
-            supvund  : (unds , 'Int8') ,
-            supvadd  : (addinfo , str) ,
-            supvreas : (reasons , str)
+            cn.supvund  : (cn.unds , 'Int8') ,
+            cn.supvadd  : (cn.addinfo , str) ,
+            cn.supvreas : (cn.reasons , str)
             }
 
     for col , ky in col_key.items() :
-        df.loc[msk , col] = df.loc[msk , cn].apply(lambda x : x[ky[0]])
+        df.loc[msk , col] = df.loc[msk , _cn].apply(lambda x : x[ky[0]])
 
         msk = df[col].notna()
         df.loc[msk , col] = df.loc[msk , col].astype(ky[1])
-    df = df.drop(columns = cn)
+    df = df.drop(columns = _cn)
     return df
 
 def make_bool_cols_as_nullable_boolean_type(df) :
@@ -133,16 +144,16 @@ def make_bool_cols_as_nullable_boolean_type(df) :
 def fix_cols_order(df) :
     ord = {
             "TracingNo"        : None ,
-            codtic             : None ,
+            cn.ctic            : None ,
             "CompanyName"      : None ,
             "LetterCode"       : None ,
             "Title"            : None ,
             "SentDateTime"     : None ,
             "PublishDateTime"  : None ,
             "UnderSupervision" : None ,
-            supvund            : None ,
-            supvadd            : None ,
-            supvreas           : None ,
+            cn.supvund         : None ,
+            cn.supvadd         : None ,
+            cn.supvreas        : None ,
             "IsEstimate"       : None ,
             "TedanUrl"         : None ,
             "HasHtml"          : None ,
@@ -166,67 +177,60 @@ def main() :
 
     ##
 
-    dfo = pd.read_parquet(oldfp)
-    df = pd.read_parquet(newfp)
-
+    rp_src = GithubData(ru.src)
+    rp_src.clone()
+    ##
+    dfop = rp_src.local_path / rd.old
+    dfp = rp_src.local_path / rd.new
+    ##
+    dfo = pd.read_parquet(dfop)
+    df = pd.read_parquet(dfp)
     ##
     dfo = make_old_columns_compatible_to_new(dfo)
-
     ##
     df = pd.concat([df , dfo])
-
     ##
     df = df.reset_index(drop = True)
-
     ##
     df = drop_some_cols(df)
-
     ##
     df = rename_cols(df)
-
     ##
     df = fix_codalticker_col(df)
-
     ##
     df = fix_tracing_no_col(df)
-
     ##
     df = fix_datetime_cols(df)
-
     ##
     df = fix_undersupervision_col(df)
-
     ##
     df = make_supervision_col_3_distinct_cols(df)
-
     ##
     df = make_bool_cols_as_nullable_boolean_type(df)
-
     ##
     df = fix_cols_order(df)
-
     ##
-    df.to_parquet('dta/com.prq' , index = False)
 
+    rp_targ = GithubData(ru.targ)
+    rp_targ.clone()
     ##
-    acod_rp = GithubData(acod_rp_url)
-    acod_rp.clone()
-
+    ofp = rp_targ.data_fp
     ##
-    ofp = acod_rp.data_filepath
-
+    sprq(df , ofp)
     ##
-    df.to_parquet(ofp , index = False)
-
+    tokp = '/Users/mahdi/Dropbox/tok.txt'
+    tok = mu.get_tok_if_accessible(tokp)
     ##
     msg = 'Data Updated by: '
-    msg += cur_rp_url
+    msg += ru.cur
 
-    acod_rp.commit_push(msg)
+    rp_targ.commit_and_push(msg , user = rp_targ.user_name , token = tok)
 
     ##
 
-    acod_rp.rmdir()
+
+    rp_src.rmdir()
+    rp_targ.rmdir()
 
 
     ##
