@@ -1,6 +1,7 @@
 class GDU :
     slf = "https://github.com/imahdimir/u-d-all-Codal-letters"
     rd = "https://github.com/imahdimir/rd-all-Codal-letters"
+    trg = "https://github.com/imahdimir/d-all-Codal-letters"
 
 class Col :
     jd = "JDate"
