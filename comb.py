@@ -1,52 +1,33 @@
-""" combines old (82-89) data with new(after 89) data
+"""
 
     """
 
-##
-
-
-import ast
-
 import pandas as pd
-from githubdata import GithubData
+
 from mirutil import utils as mu
-from mirutil.df_utils import save_as_prq_wo_index as sprq
+from mirutil.df import save_as_prq_wo_index as sprq
 from persiantools import digits
 
+from main import RDFN
+import ns
 
-class RepoUrls :
-    src = 'https://github.com/imahdimir/raw-d-all-Codal-letters'
-    targ = 'https://github.com/imahdimir/d-all-Codal-Letters'
-    cur = 'https://github.com/imahdimir/b-d-all-Codal-letters'
 
-ru = RepoUrls()
+gdu = ns.GDU()
+c = ns.DAllCodalLetters()
+rdfn = RDFN()
 
-class RawDataStems :
-    old = '82-89.prq'
-    new = 'after-89.prq'
+class ColName :
+    sym = 'Symbol'
 
-rd = RawDataStems()
-
-class ColNames :
-    tran = 'TracingNo'
-    ctic = 'CodalTicker'
-    supv = 'SuperVision'
-    unds = 'UnderSupervision'
-    addinfo = 'AdditionalInfo'
-    reasons = 'Reasons'
-    supvund = supv + '.' + unds
-    supvadd = supv + '.' + addinfo
-    supvreas = supv + '.' + reasons
-
-cn = ColNames()
+cn = ColName()
 
 def make_old_columns_compatible_to_new(df) :
     cols_map = {
-            'نماد'    : 'Symbol' ,
-            'شرکت'    : 'CompanyName' ,
-            'اطلاعیه' : 'Title' ,
-            'انتشار'  : 'PublishDateTime' ,
-            'پیوست'   : 'AttachmentUrl' ,
+            'نماد'    : cn.sym ,
+            'شرکت'    : c.CompanyName ,
+            'اطلاعیه' : c.Title ,
+            'انتشار'  : c.PublishDateTime ,
+            'پیوست'   : c.AttachmentUrl ,
             'pgn'     : 'opgn' ,
             }
     df = df.rename(columns = cols_map)
@@ -62,13 +43,13 @@ def drop_some_cols(df) :
 
 def rename_cols(df) :
     cols_map = {
-            'Symbol' : cn.ctic ,
+            'Symbol' : c.CodalTicker ,
             }
     df = df.rename(columns = cols_map)
     return df
 
 def fix_codalticker_col(df) :
-    _cn = cn.ctic
+    _cn = c.CodalTicker
 
     df[_cn] = df[_cn].str.strip()
     df[_cn] = df[_cn].str.replace('^-$' , '')
@@ -81,10 +62,9 @@ def fix_codalticker_col(df) :
     return df
 
 def fix_tracing_no_col(df) :
-    df[cn.tran] = df[cn.tran].astype('Int64')
-
-    msk = df[cn.tran].notna()
-    df.loc[msk , cn.tran] = df[cn.tran].astype(str)
+    df[c.TracingNo] = df[c.TracingNo].astype('Int64')
+    msk = df[c.TracingNo].notna()
+    df.loc[msk , c.TracingNo] = df[c.TracingNo].astype(str)
     return df
 
 def fix_datetime_cols(df) :
@@ -172,13 +152,12 @@ def fix_cols_order(df) :
     return df
 
 def main() :
-
     pass
 
     ##
-
     rp_src = GithubData(ru.src)
     rp_src.clone()
+
     ##
     dfop = rp_src.local_path / rd.old
     dfp = rp_src.local_path / rd.new
@@ -228,20 +207,25 @@ def main() :
 
     ##
 
-
     rp_src.rmdir()
     rp_targ.rmdir()
 
-
     ##
-
 
     ##
 
 ##
+
+
 if __name__ == '__main__' :
     main()
 
 ##
+
+
+if False :
+    pass
+
+    ##
 
 ##

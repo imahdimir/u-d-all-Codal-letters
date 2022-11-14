@@ -2,58 +2,50 @@
 
     """
 
-##
-
 import asyncio
 from pathlib import Path
 
-import nest_asyncio
 import pandas as pd
 import requests
-import xmltodict
-from aiohttp import client_exceptions as cer
 from aiohttp import ClientSession
-from mirutil import funcs as mf
+from aiohttp.client_exceptions import ClientOSError , ContentTypeError
+from giteasy import GitHubRepo
+from mirutil.utils import ret_clusters_indices as rci
+from main import RDFN
+
+import ns
 
 
-nest_asyncio.apply()  # Run this line in cell mode to code work
-
-outfp = Path('dta/after_89.prq')
+gdu = ns.GDU()
+rdfn = RDFN()
 
 supv = 'SuperVision'
 
 class ReqParams :
-    def __init__(self) :
-        # https://search.codal.ir/api/search/v2/q?&Audited=true&AuditorRef=-1&Category=-1&Childs=true&CompanyState=-1&CompanyType=-1&Consolidatable=true&IsNotAudited=false&Length=-1&LetterType=-1&Mains=true&NotAudited=true&NotConsolidatable=true&PageNumber=1&Publisher=false&TracingNo=-1&search=false
-        self.burl = "https://search.codal.ir/api/search/v2/q"
-        self.params = {
-                "Audited"           : "true" ,
-                "AuditorRef"        : "-1" ,
-                "Category"          : "-1" ,
-                "Childs"            : "true" ,
-                "CompanyState"      : "-1" ,
-                "CompanyType"       : "-1" ,
-                "Consolidatable"    : "true" ,
-                "IsNotAudited"      : "false" ,
-                "Length"            : "-1" ,
-                "LetterType"        : "-1" ,
-                "Mains"             : "true" ,
-                "NotAudited"        : "true" ,
-                "NotConsolidatable" : "true" ,
-                "PageNumber"        : "1" ,
-                "Publisher"         : "false" ,
-                "TracingNo"         : "-1" ,
-                "search"            : "false" ,
-                }
-
-        self.headers = {
-                'User-Agent'                : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36' ,
-                "Upgrade-Insecure-Requests" : "1" ,
-                "DNT"                       : "1" ,
-                "Accept"                    : "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" ,
-                "Accept-Language"           : "en-US,en;q=0.5" ,
-                "Accept-Encoding"           : "gzip, deflate"
-                }
+    # https://search.codal.ir/api/search/v2/q?&Audited=true&AuditorRef=-1&Category=-1&Childs=true&CompanyState=-1&CompanyType=-1&Consolidatable=true&IsNotAudited=false&Length=-1&LetterType=-1&Mains=true&NotAudited=true&NotConsolidatable=true&PageNumber=1&Publisher=false&TracingNo=-1&search=false
+    burl = "https://search.codal.ir/api/search/v2/q"
+    params = {
+            "Audited"           : "true" ,
+            "AuditorRef"        : "-1" ,
+            "Category"          : "-1" ,
+            "Childs"            : "true" ,
+            "CompanyState"      : "-1" ,
+            "CompanyType"       : "-1" ,
+            "Consolidatable"    : "true" ,
+            "IsNotAudited"      : "false" ,
+            "Length"            : "-1" ,
+            "LetterType"        : "-1" ,
+            "Mains"             : "true" ,
+            "NotAudited"        : "true" ,
+            "NotConsolidatable" : "true" ,
+            "PageNumber"        : "1" ,
+            "Publisher"         : "false" ,
+            "TracingNo"         : "-1" ,
+            "search"            : "false" ,
+            }
+    hdrs = {
+            'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'
+            }
 
 rq = ReqParams()
 
@@ -64,44 +56,41 @@ async def dl_pg_src(params) :
 
 async def scrp_task(param , pgn) :
     rt = await dl_pg_src(param)
-
     lett = rt['Letters']
     df = pd.DataFrame(data = lett)
     df['pgn'] = pgn
-
     return df
 
 async def pgs_read_main(params , pgn) :
     tasks = [scrp_task(x , y) for x , y in zip(params , pgn)]
-
     return await asyncio.gather(*tasks)
 
 def main() :
-
     pass
 
     ##
-
-    resp = requests.get(rq.burl , headers = rq.headers , timeout = 50)
+    resp = requests.get(rq.burl , headers = rq.hdrs , timeout = 50)
 
     print(resp)
     assert resp.status_code == 200
+    print(resp.text)
 
     ##
-    resp_js = xmltodict.parse(resp.text)
-    l2_js = resp_js['SearchReportListDto']
+    js = resp.json()
 
     ##
-    total_pgs = int(l2_js["Page"])
+    total_pgs = int(js["Page"])
     print(f'Total pages are {total_pgs}')
 
     ##
-    if outfp.exists() :
-        df = pd.read_parquet(outfp)
-        bfpgs = df['pgn'].unique()
-    else :
-        df = pd.DataFrame()
-        bfpgs = []
+    grp = GitHubRepo(gdu.rd)
+    grp.clone_overwrite()
+
+    ##
+    df_fp = grp.local_path / rdfn.af89
+
+    df = pd.read_parquet(df_fp)
+    bfpgs = df['pgn'].unique()
 
     ##
     pgs_2crawl = set(range(1 , total_pgs + 1)) - set(bfpgs)
@@ -120,11 +109,11 @@ def main() :
     print(all_params[0]['PageNumber'])
 
     ##
-    segs = mf.return_clusters_indices(all_params , 20)
+    clst = rci(all_params , 20)
 
     ##
     try :
-        for se in segs :
+        for se in clst :
             print(se)
             si = se[0]
             ei = se[1]
@@ -139,10 +128,7 @@ def main() :
             if supv in df.columns :
                 df[supv] = df[supv].astype(str)
 
-            df = df.drop_duplicates()
-            df.to_parquet(outfp , index = False)
-
-    except (cer.ClientOSError , cer.ContentTypeError) as er :
+    except (ClientOSError , ContentTypeError) as er :
         print(er)
 
     except KeyboardInterrupt :
@@ -150,6 +136,24 @@ def main() :
 
     ##
     df = df.drop_duplicates(subset = df.columns.difference(['pgn']))
-    df.to_parquet(outfp , index = False)
+
+    ##
+    df.to_parquet(df_fp , index = False)
+
+    ##
+    grp.commit_and_push(f'{df_fp.name} got updated, rows: {df.shape[0]}')
 
 ##
+
+
+if __name__ == '__main__' :
+    main()
+    print(f'{Path(__file__).name} Done!')
+
+##
+
+
+if False :
+    pass
+
+    ##

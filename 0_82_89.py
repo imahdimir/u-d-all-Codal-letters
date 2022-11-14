@@ -1,7 +1,7 @@
-##
-
 """
-old ones: 1382_1389
+
+bf89 ones: 1382_1389
+
     """
 
 from pathlib import Path
@@ -29,7 +29,6 @@ def main() :
     pass
 
     ##
-
     if outfp.exists() :
         df = pd.read_parquet(outfp)
         bfpgs = df['pgn'].dropna().astype(int).unique()
