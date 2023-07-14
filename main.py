@@ -12,10 +12,8 @@ from mirutil.df import save_as_prq_wo_index as sprq
 from mirutil.ns import update_ns_module as unm
 from persiantools import digits
 
-
 unm()
 import ns
-
 
 gdu = ns.GDU()
 c = ns.DAllCodalLetters()
@@ -43,7 +41,7 @@ def main() :
     pass
 
     ##
-    from _1_after_89 import main as af89m
+    from modules._1_after_89 import main as af89m
 
     af89m()
 
